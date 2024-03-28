@@ -166,9 +166,31 @@ def get_chrome_version():
         
         path = PROGRAMFILES if os.path.exists(PROGRAMFILES) else PROGRAMFILESX86 if os.path.exists(PROGRAMFILESX86) else None
 
+        if path is None:
+            try:
+                process = subprocess.Popen(
+                    [
+                        "reg", 
+                        "query", 
+                        "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe", 
+                        "/ve", # 
+                    ],
+                    stdout=subprocess.PIPE,
+                )
+                path = (
+                    process.stdout.read()
+                    .decode("utf-8")
+                    .split("REG_SZ")[1]
+                    .strip()
+                )
+            except Exception as e:
+                logging.debug(e)
+
+
         dirs = [f.name for f in os.scandir(path) if f.is_dir() and re.match("^[0-9.]+$", f.name)] if path else None
 
         version = max(dirs) if dirs else None
+
     else:
         return
     return version
